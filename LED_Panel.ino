@@ -45,21 +45,23 @@ const int ENCODER_SENSITIVITY = 4;
 unsigned long lastButtonPress = 0;
 const unsigned long debounceDelay = 200;
 
+// Zmienne do UI
+int batteryLevel = 85;  // Poziom baterii (0-100)
+bool bluetoothConnected = true;  // Status Bluetooth (połączony: true / niepołączony: false)
+
 // Funkcja konwertująca temperaturę barwową na RGB
 uint32_t kelvinToColor(int temp) {
   int r, g, b;
   temp = constrain(temp, 2900, 5600);
 
   if (temp <= 4000) { 
-    // Niska temperatura: ciepłe barwy (pomarańcz, czerwony)
     r = 255;
-    g = map(temp, 2900, 4000, 50, 165); // Zielony kanał przechodzi od małej do średniej intensywności
-    b = map(temp, 2900, 4000, 0, 50);  // Niebieski kanał minimalny
+    g = map(temp, 2900, 4000, 50, 165); 
+    b = map(temp, 2900, 4000, 0, 50);  
   } else { 
-    // Wysoka temperatura: zimne barwy (białe, lekko niebieskie)
-    r = map(temp, 4000, 5600, 255, 200); // Czerwony kanał lekko spada
-    g = 255;                            // Zielony kanał utrzymuje pełną intensywność
-    b = map(temp, 4000, 5600, 50, 200); // Niebieski kanał rośnie do większej wartości
+    r = map(temp, 4000, 5600, 255, 200); 
+    g = 255;                            
+    b = map(temp, 4000, 5600, 50, 200); 
   }
   return strip.Color(r, g, b);
 }
@@ -146,14 +148,33 @@ void drawMode(int x, int y, Mode mode, bool highlight) {
   }
 }
 
+// Funkcja rysująca baterię
+void drawBattery(int x, int y, int level) {
+  display.drawRect(x, y, 9, 13, SSD1306_WHITE);
+  display.fillRect(x+2, y-3 , 5, 2, SSD1306_WHITE);
+  int fillWidth = map(level, 0, 100, 1, 11);
+  display.fillRect(x + 2, y + 2, 5, fillWidth, SSD1306_WHITE);
+}
+
+// Funkcja rysująca Bluetooth
+void drawBluetooth(int x, int y) {
+  display.setFont(&FreeMono9pt7b);
+  display.setTextSize(0.5);
+  display.setCursor(x, y);
+  display.print("BT");
+}
+
 // Rysowanie UI
 void drawUI() {
   display.clearDisplay();
   drawMode(0, 11, currentMode, !valueSelected);
   drawValue(0, 30, currentMode, valueSelected);
+  drawBattery(SCREEN_WIDTH - 9, 19, batteryLevel);
+  drawBluetooth(SCREEN_WIDTH - 21, 11);
   display.display();
 }
 
+// Funkcja aktualizująca enkoder
 void updateEncoder() {
   int MSB = digitalRead(PIN_A);
   int LSB = digitalRead(PIN_B);
@@ -170,11 +191,14 @@ void updateEncoder() {
   lastEncoded = encoded;
 }
 
+// Funkcja obsługująca przycisk
 void handleButton() {
   unsigned long currentTime = millis();
   if ((currentTime - lastButtonPress) > debounceDelay) {
-    buttonPressed = true;
-    lastButtonPress = currentTime;
+    if (digitalRead(PIN_SW) == LOW) {
+      buttonPressed = true;
+      lastButtonPress = currentTime;
+    }
   }
 }
 
@@ -211,20 +235,21 @@ void loop() {
     encoderPosition %= ENCODER_SENSITIVITY;
 
     if (valueSelected) {
-      if (currentMode == POWER) {
-        powerPercentage += effectiveChange * 5;
-        powerPercentage = constrain(powerPercentage, 0, 100);
-      } else if (currentMode == HUE) {
-        hue += effectiveChange * 5;
-        hue = (hue + 360) % 360; 
-      } else if (currentMode == TEMP) {
+      if (currentMode == TEMP) {
         kelvin += effectiveChange * 100;
         kelvin = constrain(kelvin, 2900, 5600);
+      } else if (currentMode == POWER) {
+        powerPercentage += effectiveChange;
+        powerPercentage = constrain(powerPercentage, 0, 100);
+      } else if (currentMode == HUE) {
+        hue += effectiveChange;
+        hue = constrain(hue, 0, 255);
       }
-      updateLEDs();
     } else {
       currentMode = static_cast<Mode>((currentMode + effectiveChange + 3) % 3);
     }
+
+    updateLEDs();
     drawUI();
   }
 }
