@@ -32,7 +32,7 @@ volatile bool buttonPressed = false;
 
 // Tryby
 enum Mode { TEMP, POWER, HUE }; 
-Mode currentMode = POWER;        
+Mode currentMode = TEMP;        
 bool valueSelected = true;   
 
 // Zmienne wartości
