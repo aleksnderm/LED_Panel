@@ -19,6 +19,10 @@ LED Panel Controller is a C++ application designed to control an LED panel using
 - **Disco**: Multicolor flashing for a disco ambiance.
 - **Fireworks**: Simulates fireworks lighting effects.
 
+
+https://github.com/user-attachments/assets/5374729a-7cb9-46d5-9871-32689dc11b7f
+
+
 ### User Interface
 - Displays the current mode and its values on the OLED screen.
 - Uses a rotary encoder to change values and modes.
@@ -41,6 +45,7 @@ LED-Panel-Controller/
     ├── EffectMode.cpp
   ├── Panel_ledowy.ino
   ├── README.md
+  ├── Documentation
 ```
 
 ## Hardware Requirements
